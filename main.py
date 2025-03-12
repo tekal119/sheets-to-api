@@ -5,7 +5,7 @@ app = Flask(__name__)
 import requests
 @app.route('/')
 # Configuración del bot de Telegram
-TELEGRAM_BOT_TOKEN = '7641556155:AAGbhjIDpRSTlHsVhbx5U5roNIat9PrV3lg'
+TELEGRAM_BOT_TOKEN = '7291475602:AAG2jMR-fx52Lll7FKsFC4zigrdedG6dEfI'
 TELEGRAM_CHAT_ID = '5278452082'
 
 def enviar_a_telegram(mensaje):
