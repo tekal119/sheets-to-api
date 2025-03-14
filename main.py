@@ -17,7 +17,6 @@ def enviar_a_telegram(mensaje):
     }
     response = requests.post(url, json=payload)
     return response.json()  # Retornar la respuesta de la API para ver si hubo éxito
-print(f"Servidor corriendo en http://0.0.0.0:{port}")
 
 @app.route('/')
 def home():
@@ -37,4 +36,5 @@ def actualizar_tareas():
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 10000))  # Usar el puerto que Render asigna
+    print(f"Servidor corriendo en http://0.0.0.0:{port}")
     app.run(host="0.0.0.0", port=port)
