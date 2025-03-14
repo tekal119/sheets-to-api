@@ -35,5 +35,5 @@ def actualizar_tareas():
     return jsonify({"status": "Recibido", "data": data})
 
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 5000))  # Usar el puerto que Render asigna
+    port = int(os.environ.get("PORT", 10000))  # Usar el puerto que Render asigna
     app.run(host="0.0.0.0", port=port)
