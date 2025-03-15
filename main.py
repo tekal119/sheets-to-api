@@ -1,12 +1,22 @@
 import os
 from flask import Flask, request, jsonify
 import requests
+from datetime import datetime
 
 app = Flask(__name__)
 
 # Configuración del bot de Telegram
 TELEGRAM_BOT_TOKEN = "7291475602:AAEKIkIrlG-RUWyiGsm3u8jzsFZucute3yg"
 TELEGRAM_CHAT_ID = '5278452082'
+
+def formatear_fecha(fecha):
+    """Convierte una fecha de formato ISO a DD-MM-AAAA"""
+    if fecha:
+        try:
+            return datetime.strptime(fecha.split("T")[0], "%Y-%m-%d").strftime("%d-%m-%Y")
+        except ValueError:
+            return fecha  # Si no es una fecha válida, se mantiene el valor original
+    return ""
 
 def enviar_a_telegram(mensaje):
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
@@ -29,24 +39,31 @@ def actualizar_tareas():
     prioridad = data.get("C2", "Sin prioridad")
     categoria = data.get("D2", "Sin categoría")
     tarea = data.get("E2", "Sin tarea")
-    start_date = data.get("F2", "Sin fecha de inicio").split("T")[0]  # Convertir formato de fecha
-    endline_date = data.get("G2", "").split("T")[0] if data.get("G2") else ""
+    start_date = formatear_fecha(data.get("F2", "Sin fecha de inicio"))
+    endline_date = formatear_fecha(data.get("G2", ""))
     responsable = data.get("I2", "Sin responsable")
     notas = data.get("J2", "Sin detalles")
-    recordatorio1 = data.get("L2", "").split("T")[0] if data.get("L2") else ""
-    recordatorio2 = data.get("M2", "").split("T")[0] if data.get("M2") else ""
-    recordatorio3 = data.get("N2", "").split("T")[0] if data.get("N2") else ""
+    recordatorio1 = formatear_fecha(data.get("L2", ""))
+    recordatorio2 = formatear_fecha(data.get("M2", ""))
+    recordatorio3 = formatear_fecha(data.get("N2", ""))
+
+    # Definir prioridad con ícono correspondiente
+    prioridades_emojis = {
+        "Alta": "🔴 Alta",
+        "Media": "🟡 Media",
+        "Baja": "🟢 Baja"
+    }
+    prioridad_emoji = prioridades_emojis.get(prioridad, prioridad)
 
     # Mensaje según responsable
     if responsable.lower() == "tekal":
-        mensaje = f"Tekal, el día *{start_date}* programaste este recordatorio para que te acuerdes de *ESTO*:\n\n"
+        mensaje = f"Tekal, el día {start_date} programaste este recordatorio para que te acuerdes de *ESTO*:\n\n"
     else:
-        mensaje = f"El día *{start_date}* programaste este recordatorio para recordarle a *{responsable}* de lo siguiente:\n\n"
+        mensaje = f"El día {start_date} programaste este recordatorio para recordarle a *{responsable}* de lo siguiente:\n\n"
 
-    mensaje += f"📂 *Para* {categoria}\n"
-    mensaje += f"🔥 *Con una prioridad:* {prioridad}\n\n"
-    mensaje += f"✅ *Tenés que:* {tarea}\n"
-    mensaje += f"📝 Lo cual implica: {notas}\n\n"
+    mensaje += f"📂 *Para* {categoria}\n\n"
+    mensaje += f"🔥 *Con una prioridad:* {prioridad_emoji}\n\n"
+    mensaje += f"✅ *Tenés que:* {tarea}, lo cual implica, {notas}.\n\n"
 
     # Solo agregar la fecha de finalización si es válida
     if endline_date:
@@ -54,11 +71,11 @@ def actualizar_tareas():
 
     # Agregar recordatorios si existen
     if recordatorio1:
-        mensaje += f"🔔 *Recordatorio para el día:* {recordatorio1}\n"
+        mensaje += f"🔔 *Recordatorio para el día:* {recordatorio1}\n\n"
     if recordatorio2:
-        mensaje += f"🔔 *Otro recordatorio para el día:* {recordatorio2}\n"
+        mensaje += f"🔔 *Otro recordatorio para el día:* {recordatorio2}\n\n"
     if recordatorio3:
-        mensaje += f"⚡ *Un recordatorio más para el día* {recordatorio3}, así que para este día tenés que tener todo listo.\n"
+        mensaje += f"⚡ *Un recordatorio más para el día* {recordatorio3}, así que para este día tenés que tener todo listo.\n\n"
 
     mensaje += "\n🔥 *Tekal, SOS EL 1!! SABELO, RECORDALO SIEMPRE* 🔥"
 
