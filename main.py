@@ -6,7 +6,7 @@ app = Flask(__name__)
 
 # Configuración del bot de Telegram
 TELEGRAM_BOT_TOKEN = "7291475602:AAEKIkIrlG-RUWyiGsm3u8jzsFZucute3yg"
-TELEGRAM_CHAT_ID = '5278452082'
+TELEGRAM_CHAT_ID = "5278452082"
 
 def enviar_a_telegram(mensaje):
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
@@ -15,8 +15,11 @@ def enviar_a_telegram(mensaje):
         "text": mensaje,
         "parse_mode": "Markdown"
     }
-    response = requests.post(url, json=payload)
-    return response.json()
+    try:
+        response = requests.post(url, json=payload)
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        return {"error": str(e)}
 
 @app.route('/')
 def home():
@@ -25,7 +28,9 @@ def home():
 @app.route('/actualizar_tareas', methods=['POST'])
 def actualizar_tareas():
     data = request.get_json()
+    print(f"📩 Datos recibidos: {data}")  # Log de depuración
 
+    # Extraer datos con valores predeterminados si faltan
     prioridad = data.get("C2", "Sin prioridad")
     categoria = data.get("D2", "Sin categoría")
     tarea = data.get("E2", "Sin tarea")
@@ -37,8 +42,8 @@ def actualizar_tareas():
     recordatorio2 = data.get("M2", "")
     recordatorio3 = data.get("N2", "")
 
-    # Mensaje según responsable
-    if responsable.lower() == "tekal":
+    # Mensaje según el responsable
+    if isinstance(responsable, str) and responsable.lower() == "tekal":
         mensaje = f"Tekal, el día {start_date} programaste este recordatorio para que te acuerdes de *ESTO*:\n\n"
     else:
         mensaje = f"El día {start_date} programaste este recordatorio para recordarle a *{responsable}* de lo siguiente:\n\n"
@@ -48,7 +53,7 @@ def actualizar_tareas():
     mensaje += f"✅ Tenés que: *{tarea}*, lo cual implica: {notas}\n"
 
     # Solo agregar la fecha de finalización si es válida
-    if endline_date and "/" in endline_date:
+    if endline_date and any(char.isdigit() for char in endline_date):  # Verifica si contiene números
         mensaje += f"📅 Debe estar terminado para el día: *{endline_date}*\n"
 
     # Agregar recordatorios si existen
@@ -61,9 +66,11 @@ def actualizar_tareas():
 
     mensaje += "\n⚡ *Tekal, SOS EL 1!! SABELO, RECORDALO SIEMPRE* 🔥"
 
-    enviar_a_telegram(mensaje)
-    
-    return jsonify({"status": "Recibido", "data": data})
+    # Enviar a Telegram
+    resultado = enviar_a_telegram(mensaje)
+    print(f"📤 Respuesta de Telegram: {resultado}")
+
+    return jsonify({"status": "Recibido", "data": data, "telegram_response": resultado})
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 10000))
